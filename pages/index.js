@@ -25,7 +25,7 @@ export default function Home() {
       <h1>Orbit Visual Generator</h1>
       <textarea
         style={{ width: "100%", height: 100 }}
-        placeholder="Enter a prompt (e.g. Orbit floating above the ocean at sunset)"
+        placeholder="Enter a prompt"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
