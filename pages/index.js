@@ -2,49 +2,56 @@ import { useState } from 'react';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
-  const [image, setImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const generateImage = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
-    setImage(null);
+    setImageUrl(null);
 
-    const res = await fetch('/api/generate', {
+    const response = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ prompt })
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    if (res.ok) {
-      setImage(data.image);
+    if (response.ok && data?.output) {
+      setImageUrl(data.output);
     } else {
-      setError(data.error || 'Something went wrong.');
+      setError(data.error || 'Failed to generate image');
     }
 
     setLoading(false);
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '50px' }}>
-      <h1><strong>Orbit Visual Generator</strong></h1>
-      <input
-        type="text"
-        placeholder="Enter a prompt"
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        style={{ width: '300px', padding: '10px', fontSize: '16px' }}
-      />
-      <br /><br />
-      <button onClick={generateImage} disabled={loading}>
-        {loading ? 'Generating...' : 'Generate Image'}
-      </button>
-      <br /><br />
+    <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <h1>Orbit Visual Generator</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Enter a prompt"
+          style={{ width: '300px', padding: '10px' }}
+        />
+        <button type="submit" style={{ marginLeft: '10px', padding: '10px' }}>
+          {loading ? 'Generating...' : 'Generate Image'}
+        </button>
+      </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {image && <img src={image} alt="Generated" style={{ maxWidth: '100%' }} />}
+      {imageUrl && (
+        <div style={{ marginTop: '20px' }}>
+          <img src={imageUrl} alt="Generated result" style={{ maxWidth: '100%' }} />
+        </div>
+      )}
     </div>
   );
 }
