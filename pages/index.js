@@ -1,39 +1,46 @@
-import { useState } from "react";
+export default async function handler(req, res) {
+  const { prompt } = req.body;
 
-export default function Home() {
-  const [prompt, setPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const response = await fetch("https://api.replicate.com/v1/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: "Token r8_7IowDr1xcbSHXI79SXoWlvvS4wgW9ee49HZkT",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      version: "db21e45a3d07c61cfc5d70b95a180504c4c7e6c347510e3c36c6c597dfc5d447", // Stable Diffusion 1.5
+      input: { prompt },
+    }),
+  });
 
-  const generateImage = async () => {
-    const response = await fetch("/api/generate", {
-      method: "POST",
+  const result = await response.json();
+
+  if (result.error) {
+    return res.status(500).json({ error: result.error });
+  }
+
+  const getFinal = async () => {
+    const poll = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
       headers: {
-        "Content-Type": "application/json",
+        Authorization: "Token r8_7IowDr1xcbSHXI79SXoWlvvS4wgW9ee49HZkT",
       },
-      body: JSON.stringify({ prompt }),
     });
-    const data = await response.json();
-    setImageUrl(data.image);
+    return poll.json();
   };
 
-  return (
-    <div style={{ padding: 40 }}>
-      <h1>Orbit Visual Generator</h1>
-      <textarea
-        style={{ width: "100%", height: 100 }}
-        placeholder="Enter prompt or letter from Orbit"
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-      />
-      <br />
-      <button onClick={generateImage} style={{ marginTop: 20 }}>
-        Generate Image
-      </button>
-      {imageUrl && (
-        <div style={{ marginTop: 30 }}>
-          <img src={imageUrl} alt="Generated Output" style={{ maxWidth: "100%" }} />
-        </div>
-      )}
-    </div>
-  );
+  let output;
+  for (let i = 0; i < 20; i++) {
+    const finalResult = await getFinal();
+    if (finalResult.status === "succeeded") {
+      output = finalResult.output[0];
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  if (!output) {
+    return res.status(500).json({ error: "Image generation failed or timed out." });
+  }
+
+  res.status(200).json({ image: output });
 }
