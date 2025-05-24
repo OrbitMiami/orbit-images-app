@@ -11,43 +11,40 @@ export default function Home() {
     setError('');
     setImage(null);
 
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate');
-      }
-
+    if (res.ok) {
       setImage(data.image);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setError(data.error || 'Something went wrong.');
     }
+
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Orbit Visual Generator</h1>
+    <div style={{ textAlign: 'center', padding: '50px' }}>
+      <h1><strong>Orbit Visual Generator</strong></h1>
       <input
         type="text"
         placeholder="Enter a prompt"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        style={{ width: '80%', marginBottom: 12 }}
+        style={{ width: '300px', padding: '10px', fontSize: '16px' }}
       />
-      <br />
+      <br /><br />
       <button onClick={generateImage} disabled={loading}>
         {loading ? 'Generating...' : 'Generate Image'}
       </button>
+      <br /><br />
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {image && <img src={image} alt="Generated" style={{ marginTop: 20, maxWidth: '100%' }} />}
+      {image && <img src={image} alt="Generated" style={{ maxWidth: '100%' }} />}
     </div>
   );
 }
