@@ -3,10 +3,8 @@ import { useState } from "react";
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const generateImage = async () => {
-    setLoading(true);
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: {
@@ -16,8 +14,11 @@ export default function Home() {
     });
 
     const data = await response.json();
-    setImageUrl(data.image);
-    setLoading(false);
+    if (data.image) {
+      setImageUrl(data.image);
+    } else {
+      alert("Image generation failed. Please try again.");
+    }
   };
 
   return (
@@ -30,12 +31,12 @@ export default function Home() {
         onChange={(e) => setPrompt(e.target.value)}
       />
       <br />
-      <button onClick={generateImage} disabled={loading}>
-        {loading ? "Generating..." : "Generate Image"}
+      <button onClick={generateImage} style={{ marginTop: 10 }}>
+        Generate Image
       </button>
       {imageUrl && (
         <div style={{ marginTop: 30 }}>
-          <img src={imageUrl} alt="Generated" style={{ maxWidth: "100%" }} />
+          <img src={imageUrl} alt="Generated Visual" style={{ maxWidth: "100%" }} />
         </div>
       )}
     </div>
