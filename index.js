@@ -1,8 +1,40 @@
+import { useState } from "react";
+
 export default function Home() {
+  const [prompt, setPrompt] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+
+  const generateImage = async () => {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const data = await response.json();
+    setImageUrl(data.image);
+  };
+
   return (
-    <main>
-      <h1>Welcome to Orbit.Images</h1>
-      <p>This is your Next.js landing page.</p>
-    </main>
+    <div style={{ padding: 40 }}>
+      <h1>Orbit Visual Generator</h1>
+      <textarea
+        style={{ width: "100%", height: 100 }}
+        placeholder="Enter prompt or let Orbit speak"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+      />
+      <br />
+      <button onClick={generateImage} style={{ marginTop: 20 }}>
+        Generate Image
+      </button>
+      {imageUrl && (
+        <div style={{ marginTop: 30 }}>
+          <img src={imageUrl} alt="Generated" style={{ maxWidth: "100%" }} />
+        </div>
+      )}
+    </div>
   );
 }
