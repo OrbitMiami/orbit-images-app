@@ -5,32 +5,46 @@ export default async function handler(req, res) {
 
   const { prompt } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
-  }
-
   try {
-    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${process.env.NEW_REPLICATE_API_TOKEN}`,
+        'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        version: "a9758cb5b621b65f5569f742fe1d29d34eeb6c3e9c84d9383ab8a0011c1591e3", // Replace with the correct model version
+        version: 'db21e45a3d148f2e4c4f4f3cfef8b6b7b9d7d7cbb6ae201ee1e8f7e4f1b20041', // Update this if you switch models
         input: { prompt }
       })
     });
 
-    if (!replicateResponse.ok) {
-      const error = await replicateResponse.json();
-      return res.status(500).json({ error: error.detail || 'Replicate error' });
+    const data = await response.json();
+
+    if (response.status !== 201) {
+      return res.status(500).json({ error: data.detail || 'Failed to generate image' });
     }
 
-    const prediction = await replicateResponse.json();
-    res.status(200).json({ image: prediction.output });
+    const getResult = async () => {
+      const resultRes = await fetch(data.urls.get, {
+        headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
+      });
+      const resultData = await resultRes.json();
+
+      if (resultData.status === 'succeeded') {
+        return resultData.output[0];
+      } else if (resultData.status === 'failed') {
+        throw new Error('Image generation failed');
+      } else {
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(getResult()), 1000)
+        );
+      }
+    };
+
+    const image = await getResult();
+    res.status(200).json({ image });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: err.message });
   }
 }
